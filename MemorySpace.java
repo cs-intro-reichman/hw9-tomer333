@@ -57,8 +57,27 @@ public class MemorySpace {
 	 *        the length (in words) of the memory block that has to be allocated
 	 * @return the base address of the allocated block, or -1 if unable to allocate
 	 */
-	public int malloc(int length) {		
-		//// Replace the following statement with your code
+	public int malloc(int length) {	
+		ListIterator itr = this.freeList.iterator();
+		while (itr.hasNext()) {
+			if(itr.current.block.length == length){
+				int baseAddr = itr.current.block.baseAddress;
+				MemoryBlock allocatedBlock = new MemoryBlock(baseAddr, length);
+				this.allocatedList.addLast(allocatedBlock);
+				this.freeList.remove(itr.current.block);
+				return baseAddr;
+			}
+			else if(itr.current.block.length > length){
+				int baseAddr = itr.current.block.baseAddress;
+				MemoryBlock allocatedBlock = new MemoryBlock(baseAddr, length);
+				this.allocatedList.addLast(allocatedBlock);
+				itr.current.block.baseAddress += length;
+				itr.current.block.length -= length;
+				return baseAddr;
+			}
+			itr.next();
+		}
+		//later on... defrag();
 		return -1;
 	}
 
@@ -71,7 +90,19 @@ public class MemorySpace {
 	 *            the starting address of the block to freeList
 	 */
 	public void free(int address) {
-		//// Write your code here
+		ListIterator itr = this.allocatedList.iterator();
+		if (this.allocatedList.getLast() == null) {
+			throw new IllegalArgumentException(
+				"index must be between 0 and size");
+		}
+		while (itr.hasNext()) {
+			if (itr.current.block.baseAddress == address) {
+				this.freeList.addLast(itr.current.block);
+				this.allocatedList.remove(itr.current);
+				break;
+			}
+			itr.next();
+		}
 	}
 	
 	/**
@@ -88,7 +119,23 @@ public class MemorySpace {
 	 * In this implementation Malloc does not call defrag.
 	 */
 	public void defrag() {
-		/// TODO: Implement defrag test
-		//// Write your code here
+		ListIterator itr1 = this.freeList.iterator();
+		ListIterator itr2 = this.freeList.iterator();
+		while (itr1.hasNext()) {
+			int tryFinding = itr1.current.block.baseAddress + itr1.current.block.length;
+			while (itr2.hasNext()) {
+				if (itr2.current.block.baseAddress == tryFinding) {
+					itr1.current.block.length += itr2.current.block.length;
+					this.freeList.remove(itr2.current.block);
+					itr2 = this.freeList.iterator();
+					tryFinding = itr1.current.block.baseAddress + itr1.current.block.length;
+				}
+				else {
+					itr2.next();
+				}
+			}
+			itr2 = this.freeList.iterator();
+			itr1.next();
+		}
 	}
 }
